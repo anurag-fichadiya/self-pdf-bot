@@ -14,19 +14,21 @@ from llama_index.embeddings.fastembed import FastEmbedEmbedding
 from llama_index.core import Settings
 from llama_index.llms.groq import Groq
 
+from config import *  # Import all configuration variables
+
 # Configure logging
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 # Initialize settings
-Settings.embed_model = FastEmbedEmbedding(model_name="BAAI/bge-base-en-v1.5")
-Settings.llm = Groq(model="llama-3.3-70b-versatile")
+Settings.embed_model = FastEmbedEmbedding(model_name=EMBEDDING_MODEL)
+Settings.llm = Groq(model=LLM_MODEL)
 
 # Initialize Qdrant client
 client = qdrant_client.QdrantClient(
-    host="93e216cb-a347-405b-a0e7-bc8ca7911536.europe-west3-0.gcp.cloud.qdrant.io",
-    port=6333,
-    api_key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.Ecc00PIKhWvJVdgVfW-H0zqvAQ_XKcSkmxfPSqc-jvg"
+    host=QDRANT_HOST,
+    port=QDRANT_PORT,
+    api_key=QDRANT_API_KEY
 )
 
 def process_pdf(pdf_file):
