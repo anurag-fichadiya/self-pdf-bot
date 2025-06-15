@@ -52,11 +52,10 @@ def process_pdf(pdf_file):
         
         # Create vector store and index
         vector_store = QdrantVectorStore(client=client, collection_name=str(pdf_file.name))
-        
         if collection_exists(str(pdf_file.name)):
             index = VectorStoreIndex.from_vector_store(vector_store)
             logging.info(f"Loaded index for {pdf_file.name}")
-            return index.as_query_engine()
+            return index.as_query_engine(response_mode="refine")
         else:
             storage_context = StorageContext.from_defaults(vector_store=vector_store)
             index = VectorStoreIndex.from_documents(
@@ -64,7 +63,7 @@ def process_pdf(pdf_file):
                 storage_context=storage_context,
             )
             logging.info(f"Created new index for {pdf_file.name}")
-            return index.as_query_engine()
+            return index.as_query_engine(response_mode="refine")
 
 def main():
     st.title("PDF Chat Bot")
