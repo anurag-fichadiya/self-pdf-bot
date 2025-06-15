@@ -14,6 +14,10 @@ from llama_index.embeddings.fastembed import FastEmbedEmbedding
 from llama_index.core import Settings
 from llama_index.llms.groq import Groq
 
+from llama_index.core.indices.query.query_transform.base import (HyDEQueryTransform,)
+from llama_index.core.query_engine import TransformQueryEngine
+
+
 from config import *  # Import all configuration variables
 
 # Configure logging
@@ -31,6 +35,7 @@ client = qdrant_client.QdrantClient(
     api_key=QDRANT_API_KEY
 )
 
+#Method to Check if collection exists
 def collection_exists(collection_name: str) -> bool:
     try:
         client.get_collection(collection_name=collection_name)
@@ -53,10 +58,12 @@ def process_pdf(pdf_file):
         # Create vector store and index
         vector_store = QdrantVectorStore(client=client, collection_name=str(pdf_file.name))
         if collection_exists(str(pdf_file.name)):
+            # Load from vector store            
             index = VectorStoreIndex.from_vector_store(vector_store)
             logging.info(f"Loaded index for {pdf_file.name}")
             return index.as_query_engine(response_mode="refine")
         else:
+            #Create new index
             storage_context = StorageContext.from_defaults(vector_store=vector_store)
             index = VectorStoreIndex.from_documents(
                 documents,
@@ -64,6 +71,13 @@ def process_pdf(pdf_file):
             )
             logging.info(f"Created new index for {pdf_file.name}")
             return index.as_query_engine(response_mode="refine")
+
+def query_llm(query_engine, prompt):
+    # run query with HyDE query transform
+    hyde = HyDEQueryTransform(include_original=True)
+    query_engine = TransformQueryEngine(query_engine, query_transform=hyde)
+    response = query_engine.query(prompt)
+    return response.response
 
 def main():
     st.title("PDF Chat Bot")
@@ -103,10 +117,10 @@ def main():
             # Get bot response
             with st.chat_message("assistant"):
                 with st.spinner("Thinking..."):
-                    response = st.session_state.query_engine.query(prompt)
-                    st.write(response.response)
+                    response = query_llm(st.session_state.query_engine, prompt)
+                    st.write(response)
                     # Add assistant response to chat history
-                    st.session_state.chat_history.append({"role": "assistant", "content": str(response.response)})
+                    st.session_state.chat_history.append({"role": "assistant", "content": str(response)})
     else:
         st.info("Please upload a PDF file to start chatting!")
 
