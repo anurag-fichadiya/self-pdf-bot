@@ -11,4 +11,5 @@ dependencies = [
     "llama-index-llms-openai>=0.4.6",
     "llama-index-readers-file>=0.4.9",
     "llama-index-vector-stores-qdrant>=0.6.0",
+    "streamlit>=1.32.0",
 ]

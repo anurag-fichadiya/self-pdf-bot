@@ -1,3 +1,4 @@
+"""CONSOLE APP"""
 import logging
 import sys
 import os
