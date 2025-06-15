@@ -31,6 +31,13 @@ client = qdrant_client.QdrantClient(
     api_key=QDRANT_API_KEY
 )
 
+def collection_exists(collection_name: str) -> bool:
+    try:
+        client.get_collection(collection_name=collection_name)
+        return True
+    except Exception as e:
+        return False
+
 def process_pdf(pdf_file):
     """Process uploaded PDF and create index"""
     # Create a temporary directory to store the PDF
@@ -45,13 +52,19 @@ def process_pdf(pdf_file):
         
         # Create vector store and index
         vector_store = QdrantVectorStore(client=client, collection_name=str(pdf_file.name))
-        storage_context = StorageContext.from_defaults(vector_store=vector_store)
-        index = VectorStoreIndex.from_documents(
-            documents,
-            storage_context=storage_context,
-        )
         
-        return index.as_query_engine()
+        if collection_exists(str(pdf_file.name)):
+            index = VectorStoreIndex.from_vector_store(vector_store)
+            logging.info(f"Loaded index for {pdf_file.name}")
+            return index.as_query_engine()
+        else:
+            storage_context = StorageContext.from_defaults(vector_store=vector_store)
+            index = VectorStoreIndex.from_documents(
+                documents,
+                storage_context=storage_context,
+            )
+            logging.info(f"Created new index for {pdf_file.name}")
+            return index.as_query_engine()
 
 def main():
     st.title("PDF Chat Bot")
